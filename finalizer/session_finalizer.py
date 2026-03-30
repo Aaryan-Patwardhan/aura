@@ -159,7 +159,7 @@ async def write_attendance_record(
              minutes_present, bytes_downloaded_mb, bytes_uploaded_mb,
              status, proxy_risk_score, ap_name)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        ON CONFLICT (student_id, schedule_id, date) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT unique_attendance_session DO UPDATE SET
             minutes_present     = EXCLUDED.minutes_present,
             bytes_downloaded_mb = EXCLUDED.bytes_downloaded_mb,
             bytes_uploaded_mb   = EXCLUDED.bytes_uploaded_mb,

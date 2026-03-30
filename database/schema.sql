@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS attendance_sessions (
     ap_name             VARCHAR(50)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS unique_attendance_session ON attendance_sessions (student_id, date, schedule_id NULLS NOT DISTINCT);
+ALTER TABLE attendance_sessions DROP CONSTRAINT IF EXISTS unique_attendance_session;
+ALTER TABLE attendance_sessions ADD CONSTRAINT unique_attendance_session UNIQUE NULLS NOT DISTINCT (student_id, date, schedule_id);
 
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_attendance_date         ON attendance_sessions(date);
