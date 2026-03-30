@@ -58,7 +58,7 @@ export default function Layout() {
         <a href="https://aaryan.daemonlabs.systems" className="hover:text-slate-500 transition-colors" target="_blank" rel="noreferrer">
           Aaryan Patwardhan
         </a>{' '}
-        · DaemonCorp
+        · DaemonLabs
       </footer>
     </div>
   )
