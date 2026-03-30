@@ -29,7 +29,6 @@ import asyncio
 import json
 import logging
 import os
-import urllib.parse
 from datetime import datetime, timezone
 from typing import Optional
 

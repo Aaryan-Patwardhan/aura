@@ -212,7 +212,7 @@ async def get_finalized_sessions(limit: int = 100, offset: int = 0):
             a.ap_name
         FROM attendance_sessions a
         JOIN users u ON u.id = a.student_id
-        JOIN schedules s ON s.id = a.schedule_id
+        LEFT JOIN schedules s ON s.id = a.schedule_id
         ORDER BY a.date DESC, a.connect_time DESC
         LIMIT $1 OFFSET $2
         """,
@@ -242,7 +242,7 @@ async def get_flagged_sessions(threshold: float = 0.75):
             a.ap_name
         FROM attendance_sessions a
         JOIN users u ON u.id = a.student_id
-        JOIN schedules s ON s.id = a.schedule_id
+        LEFT JOIN schedules s ON s.id = a.schedule_id
         WHERE a.proxy_risk_score >= $1
         ORDER BY a.proxy_risk_score DESC
         LIMIT 200
@@ -256,5 +256,5 @@ async def get_flagged_sessions(threshold: float = 0.75):
 async def get_rooms_metadata():
     from common.db import get_pool
     pool = await get_pool()
-    rows = await pool.fetch("SELECT id, name, capacity FROM rooms ORDER BY id ASC")
+    rows = await pool.fetch("SELECT id, room_number as name, capacity FROM rooms ORDER BY id ASC")
     return {"rooms": [dict(r) for r in rows]}

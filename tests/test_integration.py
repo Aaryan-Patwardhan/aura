@@ -34,12 +34,15 @@ async def test_session_manager_open_closes_gracefully():
         await session_open("test", 1, "2023-01-01T00:00:00", "ap-1")
         mock_instance.hset.assert_called_once()
         mock_instance.sadd.assert_called_once()
+        mock_instance.expire.assert_called_once()
 
         mock_instance.hgetall.return_value = {
             "username": "test",
             "room_id": "1",
             "bytes_downloaded_mb": "10.0",
             "bytes_uploaded_mb": "5.0",
+            "connect_time": "",
+            "ap_name": "",
         }
         
         # Pipeline execution simulation mappings

@@ -2,13 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import LiveRoomCard from '../components/LiveRoomCard.jsx'
 import client from '../api/client.js'
 
-const ROOM_CAPACITIES = {
-  1: 60, 2: 60, 3: 80, 4: 80, 5: 40, 6: 40, 7: 30, 8: 30, 9: 120, 10: 120,
-}
-const ROOM_NAMES = {
-  1: '101', 2: '102', 3: '201', 4: '202', 5: '301', 6: '302',
-  7: 'Lab-1', 8: 'Lab-2', 9: 'Seminar-1', 10: 'Seminar-2',
-}
+
 
 function groupByRoom(sessions) {
   const map = {}
@@ -40,13 +34,15 @@ export default function Dashboard() {
   const [summary, setSummary] = useState({ total: 0, present: 0, flagged: 0 })
   const [lastUpdate, setLastUpdate] = useState(null)
   const [error, setError] = useState(null)
+  const [roomMeta, setRoomMeta] = useState({})
 
   const loadData = useCallback(async () => {
     try {
-      const [liveRes, finalRes, flaggedRes] = await Promise.all([
+      const [liveRes, finalRes, flaggedRes, roomsRes] = await Promise.all([
         client.get('/sessions/live'),
         client.get('/sessions/finalized?limit=500'),
         client.get('/sessions/flagged?threshold=0.75'),
+        client.get('/metadata/rooms').catch(() => ({ data: { rooms: [] } }))
       ])
       setLiveSessions(liveRes.data.sessions || [])
       const finalized = finalRes.data.sessions || []
@@ -57,10 +53,18 @@ export default function Dashboard() {
         flagged: (flaggedRes.data.flagged || []).length,
         liveCount: liveRes.data.active_count || 0,
       })
+      
+      const rMeta = {}
+      for (const r of (roomsRes.data.rooms || [])) {
+        rMeta[r.id] = r
+      }
+      setRoomMeta(rMeta)
+
       setLastUpdate(new Date())
       setError(null)
     } catch (e) {
-      setError('Cannot reach Aura API — is the ingestion server running?')
+      console.error(e)
+      setError(`Cannot reach Aura API — is the ingestion server running? ${e.response?.status ? '(Error ' + e.response.status + ')' : ''}`)
     }
   }, [])
 
@@ -115,10 +119,10 @@ export default function Dashboard() {
             {rooms.map(room => (
               <LiveRoomCard
                 key={room.roomId}
-                roomId={ROOM_NAMES[room.roomId] ?? room.roomId}
+                roomId={roomMeta[room.roomId]?.name || room.roomId}
                 apName={room.apName}
                 sessions={room.sessions}
-                capacity={ROOM_CAPACITIES[room.roomId] ?? 60}
+                capacity={roomMeta[room.roomId]?.capacity || 60}
               />
             ))}
           </div>

@@ -83,8 +83,9 @@ export default function Flagged() {
       const res = await client.get(`/sessions/flagged?threshold=${threshold}`)
       setSessions(res.data.flagged || [])
       setError(null)
-    } catch {
-      setError('Failed to load flagged sessions')
+    } catch (e) {
+      console.error(e)
+      setError(`Failed to load flagged sessions ${e.response?.status ? '(Error ' + e.response.status + ')' : ''}`)
     } finally {
       setLoading(false)
     }

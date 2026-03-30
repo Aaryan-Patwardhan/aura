@@ -37,8 +37,9 @@ export default function Sessions() {
       const res = await client.get('/sessions/finalized?limit=500')
       setSessions(res.data.sessions || [])
       setError(null)
-    } catch {
-      setError('Failed to load sessions')
+    } catch (e) {
+      console.error(e)
+      setError(`Failed to load sessions ${e.response?.status ? '(Error ' + e.response.status + ')' : ''}`)
     } finally {
       setLoading(false)
     }

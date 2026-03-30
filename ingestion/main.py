@@ -53,14 +53,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-@app.middleware("http")
-async def limit_upload_size(request: Request, call_next):
-    if request.method == "POST":
-        content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > 2_097_152: # 2MB
-            return JSONResponse({"detail": "Payload Too Large"}, status_code=413)
-    return await call_next(request)
-
 cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
 
 app.add_middleware(
