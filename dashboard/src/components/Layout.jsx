@@ -18,7 +18,7 @@ export default function Layout() {
             <div>
               <span className="font-bold text-slate-100 text-sm tracking-wide">Aura</span>
               <span className="hidden sm:inline text-slate-500 text-xs ml-2 border-l border-slate-700 pl-2">
-                <span className="text-slate-300">A</span>utomate yo<span className="text-slate-300">UR</span> <span className="text-slate-300">A</span>ttendance
+                <span className="text-slate-200 animate-flicker inline-block">A</span>utomate yo<span className="text-slate-200 animate-flicker inline-block" style={{ animationDelay: '0.15s' }}>UR</span> <span className="text-slate-200 animate-flicker inline-block" style={{ animationDelay: '0.4s' }}>A</span>ttendance
               </span>
             </div>
           </div>

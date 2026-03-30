@@ -41,3 +41,28 @@
     @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
   }
 }
+
+@keyframes faulty-bulb {
+  0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8), 0 0 20px rgba(148, 163, 184, 0.4); }
+  3%       { opacity: 0.4; text-shadow: none; }
+  6%       { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+  7%       { opacity: 0.4; text-shadow: none; }
+  8%       { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+  9%       { opacity: 1; }
+  10%      { opacity: 0.2; text-shadow: none; }
+  11%      { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+  50%      { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+  51%      { opacity: 0.5; text-shadow: none; }
+  52%      { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+  80%      { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+  81%      { opacity: 0.2; text-shadow: none; }
+  83%      { opacity: 0.9; text-shadow: 0 0 5px rgba(148, 163, 184, 0.4); }
+  84%      { opacity: 0.3; text-shadow: none; }
+  85%      { opacity: 1; text-shadow: 0 0 10px rgba(148, 163, 184, 0.8); }
+}
+
+@layer utilities {
+  .animate-flicker {
+    animation: faulty-bulb 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
