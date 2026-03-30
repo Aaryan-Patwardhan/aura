@@ -189,8 +189,12 @@ async def process_stop_event(pool: asyncpg.Pool, message: str) -> None:
     try:
         if data.get("connect_time"):
             connect_dt = datetime.fromisoformat(data["connect_time"])
+            if connect_dt.tzinfo:
+                connect_dt = connect_dt.replace(tzinfo=None)
         if data.get("disconnect_time"):
             disconnect_dt = datetime.fromisoformat(data["disconnect_time"])
+            if disconnect_dt.tzinfo:
+                disconnect_dt = disconnect_dt.replace(tzinfo=None)
     except (ValueError, TypeError):
         pass
 
