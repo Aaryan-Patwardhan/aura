@@ -17,7 +17,9 @@ export default function Layout() {
             <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-sm">📡</div>
             <div>
               <span className="font-bold text-slate-100 text-sm tracking-wide">Aura</span>
-              <span className="hidden sm:inline text-slate-600 text-xs ml-2">Passive Attendance Intelligence</span>
+              <span className="hidden sm:inline text-slate-500 text-xs ml-2 border-l border-slate-700 pl-2">
+                <span className="text-slate-300">A</span>utomate yo<span className="text-slate-300">UR</span> <span className="text-slate-300">A</span>ttendance
+              </span>
             </div>
           </div>
 
