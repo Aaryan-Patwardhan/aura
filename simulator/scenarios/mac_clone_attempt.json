@@ -1,0 +1,54 @@
+{
+  "_description": "MAC clone attempt scenario — 5 students in Room 102. One device (stu.rahul03) connects from the wrong AP (corridor, not room AP) with a MAC that doesn't match the registered entry point. Session is flagged INTEGRITY_SUSPECT.",
+  "lecture": {
+    "course_code": "CS401",
+    "room": "102",
+    "ap_prefix": "ap-room102",
+    "duration_minutes": 50,
+    "start_offset_seconds": 0
+  },
+  "students": [
+    {
+      "user_name": "stu.arjun01",
+      "mac": "AA:BB:CC:01:01:01",
+      "bytes_dl_mb": 10.2,
+      "bytes_ul_mb": 1.2,
+      "late_seconds": 0,
+      "called_station_id": "ap-room102-north"
+    },
+    {
+      "user_name": "stu.priya02",
+      "mac": "AA:BB:CC:01:01:02",
+      "bytes_dl_mb": 7.8,
+      "bytes_ul_mb": 0.9,
+      "late_seconds": 30,
+      "called_station_id": "ap-room102-south"
+    },
+    {
+      "user_name": "stu.rahul03",
+      "mac": "FF:EE:DD:CC:BB:AA",
+      "bytes_dl_mb": 9.1,
+      "bytes_ul_mb": 1.0,
+      "late_seconds": 0,
+      "called_station_id": "ap-corridor-a",
+      "integrity_suspect": true,
+      "_note": "MAC_CLONE: User-Name is stu.rahul03 but device appeared on corridor AP — typical of MAC spoofing to fake presence"
+    },
+    {
+      "user_name": "stu.sneha04",
+      "mac": "AA:BB:CC:01:01:04",
+      "bytes_dl_mb": 5.5,
+      "bytes_ul_mb": 0.6,
+      "late_seconds": 60,
+      "called_station_id": "ap-room102-north"
+    },
+    {
+      "user_name": "stu.amit05",
+      "mac": "AA:BB:CC:01:01:05",
+      "bytes_dl_mb": 14.0,
+      "bytes_ul_mb": 1.8,
+      "late_seconds": 0,
+      "called_station_id": "ap-room102-south"
+    }
+  ]
+}

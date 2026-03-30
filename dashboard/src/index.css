@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body, #root { height: 100%; }
+  body {
+    background-color: #0c0f1a;
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar       { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0c0f1a; }
+  ::-webkit-scrollbar-thumb { background: #1e2d45; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+}
+
+@layer components {
+  .card {
+    @apply bg-[#131929] border border-[#1e2d45] rounded-xl;
+  }
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/5;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-150 text-sm;
+  }
+  .btn-ghost {
+    @apply text-slate-400 hover:text-slate-200 hover:bg-white/5 px-3 py-2 rounded-lg transition-all duration-150 text-sm;
+  }
+  .stat-number {
+    @apply text-3xl font-bold text-slate-100 tabular-nums;
+  }
+  .stat-label {
+    @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
+  }
+}

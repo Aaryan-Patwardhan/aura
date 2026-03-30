@@ -1,0 +1,42 @@
+{
+  "_description": "Normal lecture scenario — 30 students, 50-minute CS301 lecture in Room 101. All sessions normal bandwidth. Expected: all PRESENT, Focus Scores near 0.",
+  "lecture": {
+    "course_code": "CS301",
+    "room": "101",
+    "ap_prefix": "ap-room101",
+    "duration_minutes": 50,
+    "start_offset_seconds": 0
+  },
+  "students": [
+    {"user_name": "stu.arjun01", "mac": "AA:BB:CC:01:01:01", "bytes_dl_mb": 12.4, "bytes_ul_mb": 1.8, "late_seconds": 0},
+    {"user_name": "stu.priya02", "mac": "AA:BB:CC:01:01:02", "bytes_dl_mb": 8.7,  "bytes_ul_mb": 0.9, "late_seconds": 60},
+    {"user_name": "stu.rahul03", "mac": "AA:BB:CC:01:01:03", "bytes_dl_mb": 21.3, "bytes_ul_mb": 2.5, "late_seconds": 0},
+    {"user_name": "stu.sneha04", "mac": "AA:BB:CC:01:01:04", "bytes_dl_mb": 6.1,  "bytes_ul_mb": 0.7, "late_seconds": 120},
+    {"user_name": "stu.amit05",  "mac": "AA:BB:CC:01:01:05", "bytes_dl_mb": 14.9, "bytes_ul_mb": 1.2, "late_seconds": 0},
+    {"user_name": "stu.divya06", "mac": "AA:BB:CC:01:01:06", "bytes_dl_mb": 9.3,  "bytes_ul_mb": 1.1, "late_seconds": 30},
+    {"user_name": "stu.karan07", "mac": "AA:BB:CC:01:01:07", "bytes_dl_mb": 18.5, "bytes_ul_mb": 2.0, "late_seconds": 0},
+    {"user_name": "stu.anita08", "mac": "AA:BB:CC:01:01:08", "bytes_dl_mb": 7.2,  "bytes_ul_mb": 0.8, "late_seconds": 0},
+    {"user_name": "stu.rohit09", "mac": "AA:BB:CC:01:01:09", "bytes_dl_mb": 11.0, "bytes_ul_mb": 1.5, "late_seconds": 90},
+    {"user_name": "stu.pooja10", "mac": "AA:BB:CC:01:01:0A", "bytes_dl_mb": 5.5,  "bytes_ul_mb": 0.6, "late_seconds": 0},
+    {"user_name": "stu.nikhil11","mac": "AA:BB:CC:01:01:0B", "bytes_dl_mb": 22.1, "bytes_ul_mb": 3.1, "late_seconds": 0},
+    {"user_name": "stu.kavya12", "mac": "AA:BB:CC:01:01:0C", "bytes_dl_mb": 13.7, "bytes_ul_mb": 1.9, "late_seconds": 0},
+    {"user_name": "stu.aakash13","mac": "AA:BB:CC:01:01:0D", "bytes_dl_mb": 10.2, "bytes_ul_mb": 1.3, "late_seconds": 45},
+    {"user_name": "stu.meera14", "mac": "AA:BB:CC:01:01:0E", "bytes_dl_mb": 7.8,  "bytes_ul_mb": 0.9, "late_seconds": 0},
+    {"user_name": "stu.varun15", "mac": "AA:BB:CC:01:01:0F", "bytes_dl_mb": 16.4, "bytes_ul_mb": 2.2, "late_seconds": 0},
+    {"user_name": "stu.isha16",  "mac": "AA:BB:CC:01:01:10", "bytes_dl_mb": 9.9,  "bytes_ul_mb": 1.0, "late_seconds": 30},
+    {"user_name": "stu.siddh17", "mac": "AA:BB:CC:01:01:11", "bytes_dl_mb": 14.1, "bytes_ul_mb": 1.7, "late_seconds": 0},
+    {"user_name": "stu.shruti18","mac": "AA:BB:CC:01:01:12", "bytes_dl_mb": 11.6, "bytes_ul_mb": 1.4, "late_seconds": 0},
+    {"user_name": "stu.vivek19", "mac": "AA:BB:CC:01:01:13", "bytes_dl_mb": 19.8, "bytes_ul_mb": 2.8, "late_seconds": 60},
+    {"user_name": "stu.neha20",  "mac": "AA:BB:CC:01:01:14", "bytes_dl_mb": 8.3,  "bytes_ul_mb": 1.0, "late_seconds": 0},
+    {"user_name": "stu.sameer21","mac": "AA:BB:CC:01:01:15", "bytes_dl_mb": 12.0, "bytes_ul_mb": 1.6, "late_seconds": 0},
+    {"user_name": "stu.tanvi22", "mac": "AA:BB:CC:01:01:16", "bytes_dl_mb": 6.8,  "bytes_ul_mb": 0.8, "late_seconds": 0},
+    {"user_name": "stu.harsh23", "mac": "AA:BB:CC:01:01:17", "bytes_dl_mb": 17.3, "bytes_ul_mb": 2.1, "late_seconds": 120},
+    {"user_name": "stu.riya24",  "mac": "AA:BB:CC:01:01:18", "bytes_dl_mb": 10.5, "bytes_ul_mb": 1.2, "late_seconds": 0},
+    {"user_name": "stu.ankur25", "mac": "AA:BB:CC:01:01:19", "bytes_dl_mb": 15.2, "bytes_ul_mb": 1.8, "late_seconds": 0},
+    {"user_name": "stu.lata26",  "mac": "AA:BB:CC:01:01:1A", "bytes_dl_mb": 9.1,  "bytes_ul_mb": 1.1, "late_seconds": 30},
+    {"user_name": "stu.dhruv27", "mac": "AA:BB:CC:01:01:1B", "bytes_dl_mb": 13.4, "bytes_ul_mb": 1.5, "late_seconds": 0},
+    {"user_name": "stu.sonia28", "mac": "AA:BB:CC:01:01:1C", "bytes_dl_mb": 11.9, "bytes_ul_mb": 1.3, "late_seconds": 0},
+    {"user_name": "stu.yash29",  "mac": "AA:BB:CC:01:01:1D", "bytes_dl_mb": 20.7, "bytes_ul_mb": 2.4, "late_seconds": 0},
+    {"user_name": "stu.maya30",  "mac": "AA:BB:CC:01:01:1E", "bytes_dl_mb": 7.4,  "bytes_ul_mb": 0.8, "late_seconds": 90}
+  ]
+}
