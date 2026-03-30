@@ -79,13 +79,19 @@ async def ingest_radius(raw: dict):
         return SessionOpenedResponse(username=username, ap_name=ap_name, room_id=room_id)
 
     elif event.acct_status_type == AcctStatusType.INTERIM_UPDATE:
-        await session_update(
-            username=username,
-            bytes_in=event.acct_input_octets or 0,
-            bytes_out=event.acct_output_octets or 0,
-        )
-        logger.debug("SESSION UPDATE | user=%s dl=%.2fMB ul=%.2fMB",
-                     username, event.bytes_downloaded_mb, event.bytes_uploaded_mb)
+        # Only update byte counters if the WLC actually sent them.
+        # RFC 2866 permits omitting byte counters from Interim-Updates.
+        # Passing 0 would corrupt the running total in Redis (HSET overwrites).
+        if event.acct_input_octets is not None and event.acct_output_octets is not None:
+            await session_update(
+                username=username,
+                bytes_in=event.bytes_downloaded_mb,
+                bytes_out=event.bytes_uploaded_mb,
+            )
+            logger.debug("SESSION UPDATE | user=%s dl=%.2fMB ul=%.2fMB",
+                         username, event.bytes_downloaded_mb, event.bytes_uploaded_mb)
+        else:
+            logger.debug("SESSION UPDATE (no byte counters) | user=%s — keeping existing Redis values", username)
         return SessionUpdatedResponse(
             username=username,
             bytes_downloaded_mb=event.bytes_downloaded_mb,
@@ -93,11 +99,12 @@ async def ingest_radius(raw: dict):
         )
 
     elif event.acct_status_type == AcctStatusType.STOP:
-        # Final byte counts override running totals
+        # Final byte counts override running totals in Redis.
+        # Stop packets always include byte counters (RFC 2866 §4.1).
         await session_update(
             username=username,
-            bytes_in=event.acct_input_octets or 0,
-            bytes_out=event.acct_output_octets or 0,
+            bytes_in=event.bytes_downloaded_mb,
+            bytes_out=event.bytes_uploaded_mb,
         )
         session_data = await session_close(username)
 

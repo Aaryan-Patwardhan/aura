@@ -95,5 +95,63 @@ The 15-minute tolerance handles late arrivals and early walk-ins. If no schedule
 See README for detailed roadmap. Items excluded from v1 due to requiring real multi-AP infrastructure data:
 - **RSSI Boundary Enforcement** — requires per-room multi-AP fingerprint maps
 - **AP Hop Impossibility Detection** — requires building floor-plan spatial graph
-- **Doppelgänger Detection** — requires months of correlated RSSI time-series data
+- **Doppängänger Detection** — requires months of correlated RSSI time-series data
 - **Behavioral Drift Detection** — requires per-student baseline from weeks of history
+
+---
+
+## 8. Known Limitations and Production Hardening
+
+### Redis pub/sub Reliability
+
+The finalizer worker subscribes to `aura:events:stop` via Redis pub/sub. Redis pub/sub is **fire-and-forget** with no message persistence. If the finalizer process crashes between a Stop event being published and being consumed, that event is permanently dropped — no attendance record is written and there is no recovery path.
+
+The 8-hour TTL on Redis session hash keys acts as a partial safety net: stale sessions expire cleanly rather than accumulating indefinitely. But a crashed finalizer during an active lecture means affected sessions will never be finalized.
+
+**Production hardening options (out of scope for this implementation):**
+- Replace pub/sub with **Redis Streams** (`XADD`/`XREAD` with consumer groups) — provides at-least-once delivery, message acknowledgement, and consumer group rebalancing on crash.
+- Add a **periodic reconciliation job**: scan Redis for session keys older than the expected maximum lecture duration (~4 hours) and finalize them as `ABSENT` with a flag indicating reconciliation-source.
+
+---
+
+## 9. RADIUS Protocol Notes
+
+### 32-Bit Counter Overflow and Gigawords Handling (RFC 2869 §5.1)
+
+`Acct-Input-Octets` and `Acct-Output-Octets` are 32-bit unsigned integers with a maximum value of **4,294,967,295 bytes (~4GB)**. For sessions where a student accumulates more than 4GB (e.g., a 3-hour lab practical at sustained 4 Mbps = ~5.4GB), the Octets counter wraps back to the remainder.
+
+RFC 2869 defines two companion attributes to handle this:
+- `Acct-Input-Gigawords` — how many times `Acct-Input-Octets` has wrapped past 4GB
+- `Acct-Output-Gigawords` — how many times `Acct-Output-Octets` has wrapped past 4GB
+
+Aura uses the correct reconstruction formula in `bytes_downloaded_mb` and `bytes_uploaded_mb`:
+```
+true_bytes = (gigawords * 4_294_967_296) + octets
+true_mb    = true_bytes / (1024 * 1024)
+```
+
+Gigawords attributes default to 0 when absent (the common case — most sessions are well under 4GB). The `parse_radius_event()` parser explicitly sets them to 0 via `setdefault()` so the formula always applies.
+
+For the current demo `bandwidth_fraud.json` scenario, the highest session is 698MB — far below the 4GB threshold — so `Acct-*-Gigawords = 0` for all sessions and the attributes are omitted from the scenario files.
+
+### Why Interim-Update Byte Counters Are Treated as Optional
+
+RFC 2866 §4.1 mandates `Acct-Input-Octets` and `Acct-Output-Octets` in **Stop** records only. Interim-Update packets technically should contain them, but several WLC vendors (particularly some Cisco IOS-XE versions and older Aruba firmware) omit byte counters from Interim-Updates to reduce RADIUS message frequency overhead.
+
+Aura's ingestion layer guards against this in `radius.py`:
+```python
+if event.acct_input_octets is not None and event.acct_output_octets is not None:
+    await session_update(...)
+# If absent, Redis values remain unchanged from the previous update
+```
+
+This prevents `session_update()` from overwriting valid cumulative totals with `0` due to a missing Interim-Update field — which would cause the Isolation Forest to score that session as normal (0MB bandwidth) even if it received hundreds of MB at earlier intervals.
+
+### pub/sub vs Redis Streams Tradeoff
+
+Pub/sub was chosen for v1 because:
+1. Zero configuration — no stream name, group, consumer ID management
+2. Sufficient for demo scenarios where the finalizer is always running
+3. The ingestion API response time requirement (< 100ms) is met without additional complexity
+
+For production use, Redis Streams (`XADD`/`XREAD`) would be the correct choice as they provide message durability, consumer group acknowledgement, and dead-letter queue patterns. See Section 8 for details.

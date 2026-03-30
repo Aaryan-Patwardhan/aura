@@ -1,5 +1,6 @@
 {
   "_description": "Bandwidth fraud scenario — same 30 students, same Room 101. Three students (stu.rahul03, stu.karan07, stu.vivek19) pull 400-700MB during the session. All sessions still finalize PRESENT (they were physically there), but Focus Scores spike > 0.75 for those three.",
+  "_gigawords_note": "RADIUS RFC 2869 §5.1: Acct-Input-Octets and Acct-Output-Octets are 32-bit unsigned integers (max 4,294,967,295 bytes ≈ 4GB). Acct-Input-Gigawords / Acct-Output-Gigawords track counter wraps. The highest download in this scenario is 698.4MB (vivek19), which is well below the 4GB wrap threshold. Therefore Acct-*-Gigawords = 0 for ALL sessions in this file and are omitted. To simulate a >4GB session (e.g. a 3-hour lab at 4 Mbps = ~5.4GB), the simulator would emit: Acct-Output-Octets = 1157627904 (remainder after wrap) and Acct-Output-Gigawords = 1.",
   "lecture": {
     "course_code": "CS301",
     "room": "101",

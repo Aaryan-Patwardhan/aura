@@ -28,10 +28,24 @@ def normalize_ap_name(called_station_id: str) -> str:
 def parse_radius_event(raw: dict) -> RadiusEvent:
     """
     Parse and validate a raw RADIUS event dict into a RadiusEvent.
-    Normalizes the AP name in-place before validation.
+
+    Normalises the AP name in-place before validation.
+
+    RFC 2869 §5.1 — Gigawords handling:
+    Acct-Input-Gigawords and Acct-Output-Gigawords are optional attributes
+    that count how many times the 32-bit Octets counter has wrapped past
+    4,294,967,295 bytes. They are absent from most packets (only relevant
+    for sessions exceeding ~4GB). We default them to 0 when not present so
+    the model's computed properties always use the correct formula:
+        true_bytes = (gigawords * 2^32) + octets
     """
     if "Called-Station-Id" in raw:
         raw["Called-Station-Id"] = normalize_ap_name(raw["Called-Station-Id"])
+
+    # Ensure Gigawords fields are present; absent = zero wraps occurred
+    raw.setdefault("Acct-Input-Gigawords", 0)
+    raw.setdefault("Acct-Output-Gigawords", 0)
+
     return RadiusEvent.model_validate(raw)
 
 

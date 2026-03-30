@@ -6,12 +6,23 @@ For each stop event:
   1. Extracts session data
   2. Resolves the matching schedule (room + time overlap)
   3. Calculates minutes_present
-  4. Applies 75% attendance threshold → PRESENT / PARTIAL / ABSENT
+  4. Applies 75% attendance threshold → PRESENT / PARTIAL / ABSENT / UNSCHEDULED
   5. Runs Focus Score AI model
   6. Writes finalized attendance_sessions record to PostgreSQL
 
 Run:
     python -m finalizer.session_finalizer
+
+# KNOWN LIMITATION — Redis pub/sub is fire-and-forget.
+# If this process crashes during message processing, the Stop event
+# is permanently lost and no attendance record will be written for
+# that session. The 8-hour TTL on Redis session keys acts as a
+# partial safety net — stale sessions will expire cleanly.
+#
+# Production hardening options (out of scope for this implementation):
+#   - Replace pub/sub with Redis Streams (XADD/XREAD with consumer groups)
+#   - Add a periodic reconciliation job: scan Redis for sessions older
+#     than expected lecture duration and finalize them as ABSENT
 """
 from __future__ import annotations
 
