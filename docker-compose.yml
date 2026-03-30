@@ -10,8 +10,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./database/seed_data.sql:/docker-entrypoint-initdb.d/02_seed.sql
-    ports:
-      - "5432:5432"
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aura} -d ${POSTGRES_DB:-aura}"]
       interval: 5s
@@ -22,8 +22,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: aura_redis
-    ports:
-      - "6379:6379"
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -45,8 +45,12 @@ services:
       REDIS_URL: redis://redis:6379/0
       INGESTION_PORT: 8000
       MODEL_PATH: /app/ai/models/isolation_forest.pkl
+      AURA_API_KEY: ${AURA_API_KEY:-dev_secret_key}
     ports:
       - "8000:8000"
+    networks:
+      - backend
+      - frontend
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,11 +76,18 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aura_secret}
       REDIS_URL: redis://redis:6379/0
       MODEL_PATH: /app/ai/models/isolation_forest.pkl
+    networks:
+      - backend
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f session_finalizer.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   dashboard:
@@ -84,13 +95,20 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:8000
+        - VITE_AURA_API_KEY=${AURA_API_KEY:-dev_secret_key}
     container_name: aura_dashboard
     ports:
       - "3000:80"
+    networks:
+      - frontend
     depends_on:
       - ingestion
     restart: unless-stopped
+
+networks:
+  backend:
+    internal: true
+  frontend:
 
 volumes:
   postgres_data:

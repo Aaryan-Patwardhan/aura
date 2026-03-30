@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
+import os
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,7 @@ def build_event_sequence(scenario: dict) -> list[dict]:
     ap_prefix = lecture.get("ap_prefix", "ap-room101")
 
     events = []
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     for stu in students:
         username = stu["user_name"]
@@ -138,7 +138,9 @@ def replay(scenario: dict, base_url: str, speed: float) -> None:
         status_type = packet["Acct-Status-Type"]
 
         try:
-            resp = requests.post(f"{base_url}/ingest/radius", json=packet, timeout=10)
+            api_key = os.environ.get("AURA_API_KEY", "dev_secret_key")
+            headers = {"X-API-Key": api_key}
+            resp = requests.post(f"{base_url}/ingest/radius", json=packet, headers=headers, timeout=10)
             resp.raise_for_status()
             result = resp.json()
             status_label = result.get("status", resp.status_code)

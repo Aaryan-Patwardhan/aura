@@ -141,6 +141,11 @@ This is the core architectural decision. Documented explicitly here for reviewer
 
 **On MAC randomization specifically:** iOS 14+ and Android 10+ enable MAC randomization by default. This breaks any system that treats MAC as a stable device identifier. Aura's primary session key is `User-Name` from the authenticated RADIUS packet — MAC randomization has zero effect on this, because the randomized MAC is what the device presents at Layer 2, while the credential-verified username travels inside the 802.1X/EAP tunnel at Layer 7.
 
+## Security Warnings
+
+> [!WARNING]
+> **Dashboard API Key Exposure (ARCH-7)**: The `VITE_AURA_API_KEY` injected into the React frontend is technically visible within developer tools to any user accessing the browser dashboard. In a true enterprise environment, access should be brokered via a tightly-coupled BFF (Backend For Frontend) managing JWT auth sessions, rather than injecting the raw ingestion key to the browser. The current setup only protects against direct unauthorized API hits off-client.
+
 ---
 
 ## Database Schema
@@ -151,12 +156,13 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     student_id VARCHAR(20) UNIQUE NOT NULL,  -- institutional username (RADIUS User-Name)
     name VARCHAR(100),
+    email VARCHAR(120),
     role VARCHAR(20) DEFAULT 'STUDENT'       -- 'STUDENT', 'FACULTY', 'ADMIN'
 );
 
 CREATE TABLE devices (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id),
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
     mac_address VARCHAR(17),                 -- secondary fingerprint only, not primary key
     registered_at TIMESTAMP DEFAULT NOW(),
     label VARCHAR(50)                        -- 'personal_phone', 'laptop', etc.
@@ -172,7 +178,7 @@ CREATE TABLE rooms (
 
 CREATE TABLE access_points (
     ap_name VARCHAR(50) PRIMARY KEY,         -- matches RADIUS Called-Station-Id
-    room_id INT REFERENCES rooms(id)
+    room_id INT REFERENCES rooms(id) ON DELETE SET NULL
 );
 
 -- Academic Schedule
@@ -185,7 +191,7 @@ CREATE TABLE schedules (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     day_of_week INT NOT NULL,               -- 0=Monday, 6=Sunday
-    min_attendance_pct INT DEFAULT 75
+    min_attendance_pct INT DEFAULT 75 CHECK (min_attendance_pct BETWEEN 0 AND 100)
 );
 
 -- Finalized Records
@@ -199,11 +205,15 @@ CREATE TABLE attendance_sessions (
     minutes_present INT,
     bytes_downloaded_mb FLOAT,
     bytes_uploaded_mb FLOAT,
-    status VARCHAR(20),                     -- 'PRESENT', 'ABSENT', 'PARTIAL'
+    status VARCHAR(20),                     -- 'PRESENT', 'ABSENT', 'PARTIAL', 'INTEGRITY_SUSPECT'
     proxy_risk_score FLOAT,                 -- 0.0 to 1.0, Isolation Forest output
-    ap_name VARCHAR(50),
-    UNIQUE(student_id, schedule_id, date)
+    ap_name VARCHAR(50)
 );
+
+CREATE UNIQUE INDEX unique_attendance_session ON attendance_sessions (student_id, date, COALESCE(schedule_id, -1));
+
+-- Indexes for common query patterns
+-- ... (see database/schema.sql for indexes)
 ```
 
 ---
@@ -296,7 +306,7 @@ cp .env.example .env
 docker compose up --build
 
 # In a separate terminal — run a demo scenario
-python simulator/radius_simulator.py --scenario scenarios/bandwidth_fraud.json
+python simulator/radius_simulator.py --scenario simulator/scenarios/bandwidth_fraud.json
 
 # Dashboard
 open http://localhost:3000

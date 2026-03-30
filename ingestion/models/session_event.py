@@ -3,7 +3,7 @@ Pydantic models for RADIUS accounting events.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -52,7 +52,7 @@ class RadiusEvent(BaseModel):
     calling_station_id: Optional[str] = Field(default=None, alias="Calling-Station-Id", description="Client MAC address")
 
     # Timestamp injected by simulator or WLC syslog forwarder
-    event_timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow, alias="Event-Timestamp")
+    event_timestamp: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), alias="Event-Timestamp")
 
     # Integrity flag — set by simulator for mac_clone_attempt scenario
     integrity_suspect: Optional[bool] = Field(default=False, alias="Integrity-Suspect")
@@ -119,12 +119,3 @@ class IntegritySuspectResponse(BaseModel):
     username: str
     ap_name: str
     reason: str
-
-
-class LiveSessionInfo(BaseModel):
-    username: str
-    room_id: Optional[int]
-    ap_name: str
-    connect_time: str
-    bytes_downloaded_mb: float
-    bytes_uploaded_mb: float

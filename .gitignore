@@ -15,7 +15,10 @@ env/
 pip-wheel-metadata/
 
 # AI model artifacts
-ai/models/
+# Keep models but ignore other artefacts
+ai/models/*
+!ai/models/isolation_forest.pkl
+!ai/models/score_bounds.pkl
 ai/training_data/sessions.csv
 
 # Environment

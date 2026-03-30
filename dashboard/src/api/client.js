@@ -1,11 +1,15 @@
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_KEY = import.meta.env.VITE_AURA_API_KEY || 'dev_secret_key'
 
 const client = axios.create({
   baseURL: API_BASE,
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'X-API-Key': API_KEY
+  },
 })
 
 client.interceptors.response.use(

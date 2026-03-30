@@ -11,13 +11,14 @@ Score interpretation:
 """
 from __future__ import annotations
 
-import math
 import os
 import pathlib
-from typing import Optional
 
 import joblib
 import numpy as np
+import logging
+
+logger = logging.getLogger("aura.ai")
 
 _MODEL_PATH = pathlib.Path(
     os.environ.get("MODEL_PATH", pathlib.Path(__file__).parent / "models" / "isolation_forest.pkl")
@@ -91,9 +92,11 @@ def score_session(
         score = 1.0 - (raw - raw_min) / _range
         return round(float(max(0.0, min(1.0, score))), 4)
 
-    except FileNotFoundError:
+    except FileNotFoundError as exc:
+        logger.warning("Focus Score model not loaded, returning 0.0: %s", exc)
         return 0.0
-    except Exception:
+    except Exception as exc:
+        logger.error("Error calculating focus score: %s", exc, exc_info=True)
         return 0.0
 
 

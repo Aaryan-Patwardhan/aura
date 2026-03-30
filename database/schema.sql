@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS schedules (
     start_time          TIME NOT NULL,
     end_time            TIME NOT NULL,
     day_of_week         INT NOT NULL,           -- 0=Monday, 6=Sunday
-    min_attendance_pct  INT DEFAULT 75
+    min_attendance_pct  INT DEFAULT 75 CHECK (min_attendance_pct BETWEEN 0 AND 100)
 );
 
 -- Finalized Attendance Records
@@ -58,9 +58,10 @@ CREATE TABLE IF NOT EXISTS attendance_sessions (
     bytes_uploaded_mb   FLOAT,
     status              VARCHAR(20),            -- 'PRESENT', 'ABSENT', 'PARTIAL', 'INTEGRITY_SUSPECT'
     proxy_risk_score    FLOAT,                  -- 0.0 to 1.0, Isolation Forest output
-    ap_name             VARCHAR(50),
-    UNIQUE(student_id, schedule_id, date)
+    ap_name             VARCHAR(50)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_attendance_session ON attendance_sessions (student_id, date, schedule_id NULLS NOT DISTINCT);
 
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_attendance_date         ON attendance_sessions(date);

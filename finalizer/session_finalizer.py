@@ -19,10 +19,9 @@ Run:
 # that session. The 8-hour TTL on Redis session keys acts as a
 # partial safety net — stale sessions will expire cleanly.
 #
-# Production hardening options (out of scope for this implementation):
-#   - Replace pub/sub with Redis Streams (XADD/XREAD with consumer groups)
-#   - Add a periodic reconciliation job: scan Redis for sessions older
-#     than expected lecture duration and finalize them as ABSENT
+# Production hardening implemented:
+#   - Replaced pub/sub with Redis Streams (XADD/XREADGROUP) for reliable
+#     at-least-once delivery with consumer groups. and finalize them as ABSENT
 """
 from __future__ import annotations
 
@@ -30,17 +29,16 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime, time
+import urllib.parse
+from datetime import datetime, timezone
 from typing import Optional
 
 import asyncpg
 import redis.asyncio as aioredis
-
-# Import AI scorer — model loaded lazily on first call
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from redis.exceptions import ResponseError
 
 from ai.focus_score import score_session
+from common.db import get_pool, lookup_user_id
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,19 +47,9 @@ logging.basicConfig(
 logger = logging.getLogger("aura.finalizer")
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-CHANNEL = "aura:events:stop"
-
-POSTGRES_DSN = (
-    f"postgresql://{os.environ.get('POSTGRES_USER', 'aura')}"
-    f":{os.environ.get('POSTGRES_PASSWORD', 'aura_secret')}"
-    f"@{os.environ.get('POSTGRES_HOST', 'localhost')}"
-    f":{os.environ.get('POSTGRES_PORT', 5432)}"
-    f"/{os.environ.get('POSTGRES_DB', 'aura')}"
-)
-
-
-async def get_db_pool() -> asyncpg.Pool:
-    return await asyncpg.create_pool(dsn=POSTGRES_DSN, min_size=1, max_size=5)
+STREAM_KEY = "aura:streams:stop"
+GROUP_NAME = "finalizers"
+CONSUMER_NAME = f"finalizer-{os.getpid()}"
 
 
 async def resolve_schedule(
@@ -143,11 +131,6 @@ def determine_status(
         return "ABSENT"
 
 
-async def lookup_user_id(pool: asyncpg.Pool, student_id: str) -> Optional[int]:
-    row = await pool.fetchrow("SELECT id FROM users WHERE student_id = $1", student_id)
-    return row["id"] if row else None
-
-
 async def write_attendance_record(
     pool: asyncpg.Pool,
     username: str,
@@ -162,7 +145,7 @@ async def write_attendance_record(
     proxy_risk_score: float,
     ap_name: str,
 ) -> None:
-    user_id = await lookup_user_id(pool, username)
+    user_id = await lookup_user_id(username)
     if not user_id:
         logger.warning("Unknown user_id for username=%s — skipping DB write", username)
         return
@@ -244,7 +227,7 @@ async def process_stop_event(pool: asyncpg.Pool, message: str) -> None:
     )
 
     # Write to PostgreSQL
-    date_ref = connect_dt or datetime.utcnow()
+    date_ref = connect_dt or datetime.now(timezone.utc)
     await write_attendance_record(
         pool=pool,
         username=username,
@@ -263,21 +246,40 @@ async def process_stop_event(pool: asyncpg.Pool, message: str) -> None:
 
 async def run():
     logger.info("Aura Finalizer starting …")
-    pool = await get_db_pool()
+    pool = await get_pool()
     redis_client = aioredis.from_url(REDIS_URL, decode_responses=True)
 
-    pubsub = redis_client.pubsub()
-    await pubsub.subscribe(CHANNEL)
-    logger.info("Subscribed to Redis channel: %s", CHANNEL)
+    # Ensure consumer group exists
+    try:
+        await redis_client.xgroup_create(STREAM_KEY, GROUP_NAME, id="0", mkstream=True)
+        logger.info("Created consumer group %s for stream %s", GROUP_NAME, STREAM_KEY)
+    except ResponseError as e:
+        if "BUSYGROUP Consumer Group name already exists" not in str(e):
+            raise
+        logger.info("Consumer group %s already exists", GROUP_NAME)
+
+    logger.info("Listening for events on Redis Stream: %s", STREAM_KEY)
 
     try:
-        async for message in pubsub.listen():
-            if message["type"] == "message":
-                await process_stop_event(pool, message["data"])
+        while True:
+            # Block for up to 5s waiting for a new message
+            messages = await redis_client.xreadgroup(
+                GROUP_NAME, CONSUMER_NAME, {STREAM_KEY: ">"}, count=10, block=5000
+            )
+
+            if not messages:
+                continue
+
+            for stream, entries in messages:
+                for message_id, message_data in entries:
+                    payload = message_data.get("data")
+                    if payload:
+                        await process_stop_event(pool, payload)
+                        await redis_client.xack(STREAM_KEY, GROUP_NAME, message_id)
     except asyncio.CancelledError:
-        pass
+        logger.info("Finalizer cancelled, shutting down...")
+        raise
     finally:
-        await pubsub.unsubscribe(CHANNEL)
         await redis_client.aclose()
         await pool.close()
         logger.info("Finalizer shut down cleanly.")

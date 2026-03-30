@@ -41,7 +41,7 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(null)
   const [error, setError] = useState(null)
 
-  const fetch = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
       const [liveRes, finalRes, flaggedRes] = await Promise.all([
         client.get('/sessions/live'),
@@ -65,10 +65,10 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    fetch()
-    const id = setInterval(fetch, 5000)
+    loadData()
+    const id = setInterval(loadData, 5000)
     return () => clearInterval(id)
-  }, [fetch])
+  }, [loadData])
 
   const rooms = groupByRoom(liveSessions)
 
