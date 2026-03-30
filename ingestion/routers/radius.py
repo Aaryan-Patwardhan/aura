@@ -103,8 +103,8 @@ async def ingest_radius(request: Request, raw: dict):
         if event.acct_input_octets is not None and event.acct_output_octets is not None:
             await session_update(
                 username=username,
-                bytes_in=event.bytes_downloaded_mb,
-                bytes_out=event.bytes_uploaded_mb,
+                bytes_downloaded_mb=event.bytes_downloaded_mb,
+                bytes_uploaded_mb=event.bytes_uploaded_mb,
             )
             logger.debug("SESSION UPDATE | user=%s dl=%.2fMB ul=%.2fMB",
                          username, event.bytes_downloaded_mb, event.bytes_uploaded_mb)
@@ -129,8 +129,8 @@ async def ingest_radius(request: Request, raw: dict):
         # Stop packets always include byte counters (RFC 2866 §4.1).
         await session_update(
             username=username,
-            bytes_in=event.bytes_downloaded_mb,
-            bytes_out=event.bytes_uploaded_mb,
+            bytes_downloaded_mb=event.bytes_downloaded_mb,
+            bytes_uploaded_mb=event.bytes_uploaded_mb,
         )
         session_data = await session_close(username)
 
