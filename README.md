@@ -144,7 +144,7 @@ This is the core architectural decision. Documented explicitly here for reviewer
 ## Security Warnings
 
 > [!WARNING]
-> **Dashboard API Key Exposure (ARCH-7)**: The `VITE_AURA_API_KEY` injected into the React frontend is technically visible within developer tools to any user accessing the browser dashboard. In a true enterprise environment, access should be brokered via a tightly-coupled BFF (Backend For Frontend) managing JWT auth sessions, rather than injecting the raw ingestion key to the browser. The current setup only protects against direct unauthorized API hits off-client.
+> **Dashboard API Key Exposure (ARCH-7)**: The `VITE_AURA_API_KEY` was previously baked into the React frontend image via a Docker build arg, which exposed it through Docker's layer history. This vulnerability has been mitigated in the latest `docker-compose.yml`. However, the key is still loaded into the client runtime during local development. In a true enterprise production environment, access must be brokered via a tightly-coupled BFF (Backend For Frontend) proxy managing JWT auth sessions, rather than passing the raw ingestion key to the browser.
 
 ---
 

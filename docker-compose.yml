@@ -94,8 +94,6 @@ services:
     build:
       context: ./dashboard
       dockerfile: Dockerfile
-      args:
-        - VITE_AURA_API_KEY=${AURA_API_KEY:-dev_secret_key}
     container_name: aura_dashboard
     ports:
       - "3000:80"

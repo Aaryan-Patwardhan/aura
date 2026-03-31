@@ -57,8 +57,12 @@ The model outputs a raw decision function score (higher = more normal). We inver
 
 ---
 
-## 4. Redis for Live Session State (Not PostgreSQL)
+## 4. Redis for Live Session State (Not PostgreSQL or In-Process State)
 
+### Why not In-Process State?
+Storing live student sessions in a generic Python dictionary (`dict`) within the ingestion app works for a single-worker prototype, but it catastrophically breaks in production. FastAPI must run behind a process manager like Gunicorn or Uvicorn workers to utilize multiple CPU cores. In-process memory is not shared between these workers. A RADIUS `Start` packet might hit Worker A, while the subsequent `Stop` packet hits Worker B, resulting in an orphaned state.
+
+### Why Redis over PostgreSQL?
 Every RADIUS `Interim-Update` event is a hash set operation on a single Redis key. Under 500 concurrent student sessions, that is ~500 hash updates per accounting interval (typically every 60–300 seconds from the WLC). 
 
 PostgreSQL writes are ACID-transactional and involve disk I/O. Hash updates in Redis are sub-millisecond in-memory operations. The session state does not need to be durable during the session — it only needs to be finalized to PostgreSQL at `Accounting-Stop`. Redis is the correct tool.
@@ -76,6 +80,17 @@ The ingestion API must respond to RADIUS events in < 100ms (performance target).
 4. A PostgreSQL INSERT
 
 These operations are not compatible with a sub-100ms synchronous response path. Separating them into a subscriber worker allows the ingestion API to return immediately after publishing the stop event, while finalization happens asynchronously.
+
+---
+
+## 5.5. FastAPI Over Flask
+
+### Why FastAPI?
+Aura's ingestion pipeline handles massive concurrency. When millions of RADIUS accounting packets hit the server within a concentrated 5-minute pre-lecture window, asynchronous I/O is not a luxury—it's a strict requirement. 
+
+**FastAPI** is built from the ground up on standard Python `async/await` syntax and the high-performance ASGI server (Uvicorn/uvloop), allowing non-blocking network calls to Redis and asynchronous stream publishing.
+
+**Flask** uses a traditional synchronous WSGI model by default. While Flask 2.0+ introduced basic async support, its core routing and extension ecosystem remain heavily synchronous. Additionally, FastAPI provides native Pydantic validation: every incoming RADIUS packet is strongly typed and automatically coerced to correct standard types (like converting octet strings to floats) before our routing logic even touches it. Doing this safely in Flask would require bolting on `marshmallow` or manually managing `request.json` parsing.
 
 ---
 
