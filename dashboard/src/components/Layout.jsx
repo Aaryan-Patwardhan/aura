@@ -55,12 +55,8 @@ export default function Layout() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#1e2d45] py-4 text-center text-xs text-slate-700">
-        Aura · Built by{' '}
-        <a href="https://aaryan.daemonlabs.systems" className="hover:text-slate-500 transition-colors" target="_blank" rel="noreferrer">
-          Aaryan Patwardhan
-        </a>{' '}
-        · DaemonLabs
+      <footer className="border-t border-[#1e2d45] py-6 text-center text-[10px] text-slate-600 uppercase tracking-widest font-semibold">
+        Built by QuantaSharp
       </footer>
     </div>
   )
