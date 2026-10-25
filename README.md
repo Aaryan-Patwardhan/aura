@@ -48,7 +48,7 @@ The primary session identifier is the **authenticated `User-Name`** (the student
 │  scenarios/bandwidth_fraud.json                                 │
 │  scenarios/mac_clone_attempt.json                               │
 └────────────────────────┬────────────────────────────────────────┘
-                         │ UDP Syslog / RADIUS Accounting packets
+                         │ HTTP POST (JSON) — RADIUS Accounting events
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              FastAPI Ingestion Server  (async)                  │
@@ -89,7 +89,7 @@ The primary session identifier is the **authenticated `User-Name`** (the student
                              │  Live room occupancy view        │
                              │  Per-student session timeline    │
                              │  AI-flagged sessions with score  │
-                             │  CSV export per course           │
+                             │  CSV export                      │
                              └──────────────────────────────────┘
 ```
 
@@ -97,7 +97,7 @@ The primary session identifier is the **authenticated `User-Name`** (the student
 
 **RADIUS Simulator** — Ships with three pre-built scenario configs that generate realistic `Accounting-Start`, `Accounting-Stop`, and interim `Accounting-Interim-Update` packets, exactly as a real Cisco/Aruba WLC would emit. This is what makes the entire pipeline demoable on a single machine without real campus infrastructure.
 
-**FastAPI Ingestion Server** — Async endpoint receiving raw RADIUS events. Parses the `User-Name` (primary key), `Called-Station-Id` (AP identifier), `Acct-Status-Type` (Start/Stop/Interim-Update), and byte counters. Dispatches session open/update/close events to Redis with sub-100ms latency.
+**FastAPI Ingestion Server** — Async endpoint receiving raw RADIUS events. Parses the `User-Name` (primary key), `Called-Station-Id` (AP identifier), `Acct-Status-Type` (Start/Stop/Interim-Update), and byte counters. Dispatches session open/update/close events to Redis.
 
 **Redis Session Manager** — Holds the live state hash for every active device: `{username, room_id, connect_time, ap_name, bytes_in, bytes_out}`. Not a database write on every RADIUS packet — a hash update in memory. Sessions survive API server restarts. This is the component that makes real-time dashboard updates possible.
 
@@ -105,7 +105,7 @@ The primary session identifier is the **authenticated `User-Name`** (the student
 
 **Isolation Forest (Focus Score)** — The AI layer. See below.
 
-**React Dashboard** — Live room occupancy, session timelines per student, flagged session cards with score breakdown. Role-based: Faculty view (their courses only), Admin view (full campus).
+**React Dashboard** — Live room occupancy, session timelines per student, flagged session cards with score breakdown, CSV export. (Faculty/admin roles are on the roadmap.)
 
 ---
 
@@ -226,7 +226,7 @@ The simulator ships with three pre-built scenarios runnable out of the box:
 
 **`bandwidth_fraud.json`** — Same cohort, but 3 students pull 400–700MB during the session. Sessions still finalize as `PRESENT` (they were physically there), but Focus Score spikes > 0.75 and the sessions are flagged on the dashboard.
 
-**`mac_clone_attempt.json`** — A device connects from a different AP than the registered student's typical entry point, with a mismatched `User-Name` / MAC pair. The session is flagged `INTEGRITY_SUSPECT` before it opens.
+**`mac_clone_attempt.json`** — Demonstrates how the pipeline handles a session marked `INTEGRITY_SUSPECT`: the event is rejected before a session opens and the response explains why. In this demo the simulator sets the integrity flag itself; detecting MAC cloning from real controller data (unregistered MAC, impossible travel between buildings) is on the roadmap.
 
 ---
 
@@ -305,7 +305,8 @@ cp .env.example .env
 # Start full stack
 docker compose up --build
 
-# In a separate terminal — run a demo scenario
+# In a separate terminal — run a demo scenario (needs Python + requests)
+pip install requests
 python simulator/radius_simulator.py --scenario simulator/scenarios/bandwidth_fraud.json
 
 # Dashboard
@@ -316,6 +317,8 @@ open http://localhost:3000
 
 ## Performance Targets
 
+Design targets — **not yet benchmarked**. A load test is on the roadmap.
+
 | Metric | Target | Notes |
 |---|---|---|
 | Ingestion latency | < 100ms | Per RADIUS event under 500 concurrent sessions |
@@ -325,9 +328,31 @@ open http://localhost:3000
 
 ---
 
+## Current Status & Limitations
+
+Aura is a working prototype that runs end to end on one machine with the RADIUS simulator. Before it can run on a real campus:
+
+- **Real controllers:** the API accepts RADIUS accounting events as JSON over HTTP. A FreeRADIUS bridge (UDP 1813 → `/ingest/radius`) is needed to receive events from a Cisco/Aruba WLC.
+- **Integrity checks:** the `INTEGRITY_SUSPECT` path is driven by a flag in the simulated events; real detection is not implemented yet.
+- **Access control:** there is no login or role system yet; the dashboard uses a single API key.
+- **Throughput:** the ingest endpoint is rate-limited to 100 requests/minute per key, which is too low for a real campus and must be raised for the controller's key.
+- **Missing Stop events:** sessions whose Stop event never arrives expire after 8 hours without an attendance record.
+- **Dashboard:** room names do not load in the Docker build yet (`/metadata/` is not proxied by nginx).
+- **Focus Score:** the Isolation Forest is trained on synthetic data; it needs a pilot with real sessions to be calibrated.
+
+---
+
 ## Roadmap
 
-Features designed and documented, not yet implemented:
+Next up:
+
+- **FreeRADIUS bridge** for real campus controllers
+- **Faculty and admin roles** with login (faculty see only their courses)
+- **Real integrity detection** — unregistered MACs and impossible travel between buildings
+- **Finalising sessions without a Stop event** (idle timeout / end of lecture)
+- **Load test** against the performance targets above
+
+Designed and documented, not yet implemented:
 
 - **RSSI Boundary Enforcement** — Per-room fingerprint map to validate a device is physically inside the room, not in the corridor. Requires multi-AP RSSI vectors.
 - **AP Hop Impossibility Detection** — Spatial-temporal constraint graph over building floor plans to detect physically impossible device transitions (MAC cloning indicator).
@@ -357,4 +382,4 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-*Built by [Aaryan Patwardhan](https://aaryan.daemonlabs.systems) · [DaemonCorp](https://daemonlabs.systems)*
+*Built by [Aaryan Patwardhan](https://github.com/Aaryan-Patwardhan) · QuantaSharp*
